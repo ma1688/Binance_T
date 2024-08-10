@@ -4,6 +4,7 @@
 # @Time      :2024/8/10 下午5:44
 # @Author    :MA-X-J
 # @Software  :PyCharm
+import asyncio
 
 import httpx
 
@@ -365,3 +366,12 @@ class BinRest:
         """
         params = {"symbol": symbol} if symbol else {}
         return self.client.get(url=self.rest_base_url + "/fapi/v1/assetIndex", params=params).json()
+
+    async def main(self):
+        return await self.test_ping()
+
+
+if __name__ == "__main__":
+    rest = BinRest()
+    aa = asyncio.run(rest.main())
+    print(aa)
