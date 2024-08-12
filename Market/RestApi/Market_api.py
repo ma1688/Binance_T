@@ -4,6 +4,7 @@
 # @Time      :2024/8/12 下午4:41
 # @Author    :MA-X-J
 # @Software  :PyCharm
+import asyncio
 
 import httpx
 
@@ -393,3 +394,8 @@ class MarketRestApi:
         """
         params = {"symbol": symbol}
         return self.client.get(url=self.rest_base_url + "/fapi/v1/assetIndex", params=params).json()
+
+
+if __name__ == "__main__":
+    market = MarketRestApi()
+    print(asyncio.run(market.get_server_time()))
