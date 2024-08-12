@@ -1,14 +1,11 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
-# @FileName  :Market_Rest_WebSocket.py
-# @Time      :2024/8/10 下午5:44
+# @FileName  :Market_api.py
+# @Time      :2024/8/12 下午4:41
 # @Author    :MA-X-J
 # @Software  :PyCharm
-import asyncio
-import json
 
 import httpx
-import websockets
 
 api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
 secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
@@ -38,7 +35,6 @@ class MarketRestApi:
     async def get_exchange_info(self):
         """
         获取交易对信息
-
         :return:  {}
         """
         return self.client.get(url=self.rest_base_url + "/fapi/v1/exchangeInfo").json()
@@ -397,130 +393,3 @@ class MarketRestApi:
         """
         params = {"symbol": symbol}
         return self.client.get(url=self.rest_base_url + "/fapi/v1/assetIndex", params=params).json()
-
-
-class MarketWebSocket:
-    def __init__(self, api_keys, secret_keys):
-        # 初始化方法，设置基础URL、API密钥和WebSocket对象
-        self.base_url = "wss://fstream.binance.com"
-        self.api_key = api_keys
-        self.secret_key = secret_keys
-        self.ws = None
-
-    async def connect(self, stream_name):
-        # 连接到单个WebSocket流
-        url = f"{self.base_url}/ws/{stream_name}"
-        self.ws = await websockets.connect(url)
-        await self.handle_connection()
-
-    async def connect_multiple(self, stream_names):
-        # 连接到多个WebSocket流
-        streams = "/".join(stream_names)
-        url = f"{self.base_url}/stream?streams={streams}"
-        self.ws = await websockets.connect(url)
-        await self.handle_connection()
-
-    async def handle_connection(self):
-        # 处理WebSocket连接，接收消息并打印
-        try:
-            while True:
-                message = await self.ws.recv()
-                data = json.loads(message)
-                print(f"{data}")
-        except websockets.ConnectionClosed:
-            # 连接关闭时重新连接
-            print("Connection closed, reconnecting...")
-            await self.reconnect()
-
-    async def reconnect(self):
-        # 重新连接WebSocket
-        await asyncio.sleep(5)
-        await self.connect(self.stream_name)
-
-    async def send_ping(self):
-        # 定期发送ping消息以保持连接
-        while True:
-            await asyncio.sleep(180)
-            await self.ws.ping()
-
-    async def subscribe(self, stream_name):
-        # 订阅单个WebSocket流并发送ping消息
-        await self.connect(stream_name)
-        await asyncio.create_task(self.send_ping())
-
-    async def subscribe_multiple(self, stream_names):
-        # 订阅多个WebSocket流并发送ping消息
-        await self.connect_multiple(stream_names)
-        await asyncio.create_task(self.send_ping())
-
-    async def close(self):
-        # 关闭WebSocket连接
-        await self.ws.close()
-
-
-if __name__ == "__main__":
-    api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
-    secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
-    webs = MarketWebSocket(api_key, secret_key)
-    asyncio.run(webs.subscribe("btcusdt_perpetual@continuousKline_1m"))
-    # rest = MarketRestApi()
-    # # 测试
-    # print(asyncio.run(rest.test_ping()))
-    # # # 获取服务器时间
-    # print(asyncio.run(rest.get_server_time()))
-    # # # 获取交易对信息
-    # # print(asyncio.run(rest.get_exchange_info()))
-    # # # 获取深度信息
-    # print(asyncio.run(rest.get_order_book("BTCUSDT")))
-    # # # 获取最新成交
-    # # print(asyncio.run(rest.get_recent_trades("BTCUSDT")))
-    # # 获取历史成交
-    # # print(asyncio.run(rest.get_historical_trades("BTCUSDT")))
-    # # 获取聚合成交
-    # # print(asyncio.run(rest.get_aggregate_trades_list("BTCUSDT")))
-    # # 获取K线数据
-    # # print(asyncio.run(rest.get_candlestick_data("BTCUSDT", "1m")))
-    # # # 获取合约K线数据
-    # # print(asyncio.run(rest.get_continuous_Klines("BTCUSDT", "PERPETUAL", "1m")))
-    # # 获取价格指数K线数据
-    # # print(asyncio.run(rest.get_index_price_klines("BTCUSDT", "1m")))
-    # # 获取标记价格K线数据
-    # # print(asyncio.run(rest.get_mark_price_klines("BTCUSDT", "1m")))
-    # # 获取溢价指数K线数据
-    # # print(asyncio.run(rest.get_premium_index_klines("BTCUSDT", "1m")))
-    # # 获取最新标记价格和资金费率
-    # # print(asyncio.run(rest.get_premium_index("BTCUSDT")))
-    # # 查询资金费率历史
-    # # print(asyncio.run(rest.get_funding_rate_history("BTCUSDT")))
-    # # 查询资金费率信息
-    # # print(asyncio.run(rest.get_funding_info("BTCUSDT")))
-    # # 获取24小时价格变动情况
-    # # print(asyncio.run(rest.get_24hr_ticker("BTCUSDT")))
-    # # 获取最新价格
-    # # print(asyncio.run(rest.get_latest_price("BTCUSDT")))
-    # # 获取最新价格V2
-    # # print(asyncio.run(rest.get_latest_price_V2("BTCUSDT")))
-    # # 返回当前最优的挂单(最高买单，最低卖单)
-    # # print(asyncio.run(rest.get_best_order("BTCUSDT")))
-    # # 返回季度合约历史结算价
-    # # print(asyncio.run(rest.get_quarterly_contract_settlement_price("BTCUSD_240725")))
-    # # 获取未平仓合约数
-    # # print(asyncio.run(rest.get_open_interest("BTCUSDT")))
-    # # # 查询合约持仓量历史
-    # # print(asyncio.run(rest.get_open_interest_hist("BTCUSDT", "15m")))
-    # # 获取大户持仓量多空比
-    # # print(asyncio.run(rest.get_top_long_short_position_ratio("BTCUSDT", "1d")))
-    # # 获取大户账户数多空比
-    # # print(asyncio.run(rest.get_top_long_short_account_ratio("BTCUSDT", "1d")))
-    # # # 获取多空持仓人数比
-    # # print(asyncio.run(rest.get_global_long_short_account_ratio("BTCUSDT", "1d")))
-    # # # 获取合约主动买卖量
-    # # print(asyncio.run(rest.get_taker_long_short_ratio("BTCUSDT", "1d")))
-    # # # 获取杠杆代币历史净值K线
-    # # print(asyncio.run(rest.get_lvt_klines("BTCDOWN", "1m")))
-    # # # 获取交易对为综合指数的基础成分信息
-    # # print(asyncio.run(rest.get_index_info("BTCUSDT")))
-    # # # 获取多资产模式资产汇率指数
-    # # print(asyncio.run(rest.get_asset_index("BTCUSDT")))
-    # #
-    # #
