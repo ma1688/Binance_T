@@ -27,70 +27,532 @@ class TradeRestApi:
         self.api_key = api_key
         self.secret_key = secret_key
         self.timestamp = int(time.time() * 1000)
+        self.headers = {
+            "Content-Type": "application/json;charset=utf-8",
+            "User-Agent": "binance-api",
+            'X-MBX-APIKEY': self.api_key
+        }
+        self.client = httpx.AsyncClient(headers=self.headers)
 
-    def get_signature(self, params):
+    async def get_signature(self, params):
+        """
+        :param params:
+        :return:
+        """
         params['timestamp'] = self.timestamp
         query_string = urllib.parse.urlencode(params)
         signature = hmac.new(self.secret_key.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
         params['signature'] = signature
         return params
 
+    async def place_order(self, symbol, side, types, positionSide=None, reduceOnly=None, quantity=None, price=None,
+                          newClientOrderId=None, stopPrice=None, closePosition=None, activationPrice=None,
+                          callbackRate=None, timeInForce=None, workingType=None, priceProtect=None,
+                          newOrderRespType=None, priceMatch=None, selfTradePreventionMode=None, goodTillDate=None,
+                          recvWindow=None):
+        """
+        下单
+        """
+        params = {
+            'symbol': symbol,
+            'side': side,
+            'type': types,
+            'timestamp': self.timestamp
+        }
+        if positionSide:
+            params['positionSide'] = positionSide
+        if reduceOnly:
+            params['reduceOnly'] = reduceOnly
+        if quantity:
+            params['quantity'] = quantity
+        if price:
+            params['price'] = price
+        if newClientOrderId:
+            params['newClientOrderId'] = newClientOrderId
+        if stopPrice:
+            params['stopPrice'] = stopPrice
+        if closePosition:
+            params['closePosition'] = closePosition
+        if activationPrice:
+            params['activationPrice'] = activationPrice
+        if callbackRate:
+            params['callbackRate'] = callbackRate
+        if timeInForce:
+            params['timeInForce'] = timeInForce
+        if workingType:
+            params['workingType'] = workingType
+        if priceProtect:
+            params['priceProtect'] = priceProtect
+        if newOrderRespType:
+            params['newOrderRespType'] = newOrderRespType
+        if priceMatch:
+            params['priceMatch'] = priceMatch
+        if selfTradePreventionMode:
+            params['selfTradePreventionMode'] = selfTradePreventionMode
+        if goodTillDate:
+            params['goodTillDate'] = goodTillDate
+        if recvWindow:
+            params['recvWindow'] = recvWindow
 
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/order"
+        response = await self.client.post(url, json=params)
+        return response.json()
 
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from datetime import datetime
+    async def place_batch_order(self, batchOrders, recvWindow=1688):
+        """
+        批量下单
+        """
+        params = {
+            'batchOrders': batchOrders,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
 
-# Provided data
-data = {
-    'e': 'continuous_kline',
-    'E': 1723441396148,
-    'ps': 'BTCUSDT',
-    'ct': 'PERPETUAL',
-    'k': {
-        't': 1723441380000,
-        'T': 1723441439999,
-        'i': '1m',
-        'f': 5141607623778,
-        'L': 5141608694769,
-        'o': '58476.00',
-        'c': '58488.50',
-        'h': '58488.50',
-        'l': '58475.90',
-        'v': '20.936',
-        'n': 445,
-        'x': False,
-        'q': '1224398.29390',
-        'V': '14.412',
-        'Q': '842851.12440',
-        'B': '0'
-    }
-}
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/batchOrders"
+        response = await self.client.post(url, json=params)
+        return response.json()
 
-# Extracting the Kline data
-kline = data['k']
-open_time = datetime.fromtimestamp(kline['t'] / 1000)
-close_time = datetime.fromtimestamp(kline['T'] / 1000)
-open_price = float(kline['o'])
-close_price = float(kline['c'])
-high_price = float(kline['h'])
-low_price = float(kline['l'])
+    async def modify_order(self, symbol, side, quantity, price, orderId=None, origClientOrderId=None, priceMatch=None,
+                           recvWindow=None):
+        """
+        修改订单
+        修改订单功能，当前只支持限价（LIMIT）订单修改，修改后会在撮合队列里重新排序
 
-# Plotting the candlestick
-fig, ax = plt.subplots()
-ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
-ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=1))
+        请求权重   10s order rate limit(X-MBX-ORDER-COUNT-10S)为1;
+                 1min order rate limit(X-MBX-ORDER-COUNT-1M)为1;
+                 IP rate limit(x-mbx-used-weight-1m)为1
+        """
+        params = {
+            'symbol': symbol,
+            'side': side,
+            'quantity': quantity,
+            'price': price,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if origClientOrderId:
+            params['origClientOrderId'] = origClientOrderId
+        if priceMatch:
+            params['priceMatch'] = priceMatch
+        if recvWindow:
+            params['recvWindow'] = recvWindow
 
-# Candlestick representation
-ax.plot([open_time, close_time], [open_price, close_price], color='black')
-ax.vlines(open_time, low_price, high_price, color='black')
-ax.vlines(close_time, low_price, high_price, color='black')
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/order"
+        response = await self.client.put(url, json=params)
+        return response.json()
 
-# Adding labels and title
-plt.xlabel('Time')
-plt.ylabel('Price')
-plt.title(f"Continuous Kline Data for {data['ps']} ({data['ct']})")
+    async def modify_batch_order(self, batchOrders, recvWindow=None):
+        """
+        批量修改订单
+        """
+        params = {
+            'batchOrders': batchOrders,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
 
-# Display the plot
-plt.grid(True)
-plt.show()
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/batchOrders"
+        response = await self.client.put(url, json=params)
+        return response.json()
+
+    async def get_order_amendment_history(self, symbol, orderId=None, origClientOrderId=None, startTime=None,
+                                          endTime=None, limit=50, recvWindow=None):
+        """
+        查询订单修改历史
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if origClientOrderId:
+            params['origClientOrderId'] = origClientOrderId
+        if startTime:
+            params['startTime'] = startTime
+        if endTime:
+            params['endTime'] = endTime
+        if limit:
+            params['limit'] = limit
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/orderAmendment"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def cancel_order(self, symbol, orderId=None, origClientOrderId=None, recvWindow=None):
+        """
+        撤销订单
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if origClientOrderId:
+            params['origClientOrderId'] = origClientOrderId
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/order"
+        response = await self.client.delete(url, params=params)
+        return response.json()
+
+    async def cancel_batch_order(self, symbol, orderIdList=None, origClientOrderIdList=None, recvWindow=None):
+        """
+        批量撤销订单
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderIdList:
+            params['orderIdList'] = orderIdList
+        if origClientOrderIdList:
+            params['origClientOrderIdList'] = origClientOrderIdList
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/batchOrders"
+        response = await self.client.delete(url, params=params)
+        return response.json()
+
+    async def cancel_all_orders(self, symbol, recvWindow=None):
+        """
+        撤销全部订单
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/allOpenOrders"
+        response = await self.client.delete(url, params=params)
+        return response.json()
+
+    async def countdown_cancel_all_orders(self, symbol, countdownTime, recvWindow=None):
+        """
+        倒计时撤销所有订单
+        """
+        params = {
+            'symbol': symbol,
+            'countdownTime': countdownTime,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/countdownCancelAll"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def get_order_status(self, symbol, orderId=None, origClientOrderId=None, recvWindow=None):
+        """
+        查询订单状态
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if origClientOrderId:
+            params['origClientOrderId'] = origClientOrderId
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/order"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_all_orders(self, symbol, orderId=None, startTime=None, endTime=None, limit=500, recvWindow=None):
+        """
+        查询所有订单(包括历史订单)
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if startTime:
+            params['startTime'] = startTime
+        if endTime:
+            params['endTime'] = endTime
+        if limit:
+            params['limit'] = limit
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/allOrders"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_open_orders(self, symbol=None, recvWindow=None):
+        """
+        查看当前全部挂单
+        """
+        params = {
+            'timestamp': self.timestamp
+        }
+        if symbol:
+            params['symbol'] = symbol
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/openOrders"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_open_order(self, symbol, orderId=None, origClientOrderId=None, recvWindow=None):
+        """
+        查询当前挂单
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if origClientOrderId:
+            params['origClientOrderId'] = origClientOrderId
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/openOrder"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_force_orders(self, symbol=None, autoCloseType=None, startTime=None, endTime=None, limit=50,
+                               recvWindow=None):
+        """
+        查询用户强平单历史
+        """
+        params = {
+            'timestamp': self.timestamp
+        }
+        if symbol:
+            params['symbol'] = symbol
+        if autoCloseType:
+            params['autoCloseType'] = autoCloseType
+        if startTime:
+            params['startTime'] = startTime
+        if endTime:
+            params['endTime'] = endTime
+        if limit:
+            params['limit'] = limit
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/forceOrders"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_user_trades(self, symbol, orderId=None, startTime=None, endTime=None, fromId=None, limit=500,
+                              recvWindow=None):
+        """
+        获取某交易对的成交历史
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if orderId:
+            params['orderId'] = orderId
+        if startTime:
+            params['startTime'] = startTime
+        if endTime:
+            params['endTime'] = endTime
+        if fromId:
+            params['fromId'] = fromId
+        if limit:
+            params['limit'] = limit
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/userTrades"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def change_margin_type(self, symbol, marginType, recvWindow=None):
+        """
+        变换用户在指定symbol合约上的保证金模式：逐仓或全仓
+        """
+        params = {
+            'symbol': symbol,
+            'marginType': marginType,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/marginType"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def change_position_mode(self, dualSidePosition, recvWindow=None):
+        """
+        变换用户在所有symbol合约上的持仓模式：双向持仓或单向持仓
+        """
+        params = {
+            'dualSidePosition': dualSidePosition,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/positionSide/dual"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def change_leverage(self, symbol, leverage, recvWindow=None):
+        """
+        调整用户在指定symbol合约的开仓杠杆
+        """
+        params = {
+            'symbol': symbol,
+            'leverage': leverage,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/leverage"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def change_multi_assets_margin(self, multiAssetsMargin, recvWindow=None):
+        """
+        变换用户在所有symbol合约上的联合保证金模式：开启或关闭联合保证金模式
+        """
+        params = {
+            'multiAssetsMargin': multiAssetsMargin,
+            'timestamp': self.timestamp
+        }
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/multiAssetsMargin"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def adjust_isolated_margin(self, symbol, amount, type, positionSide=None, recvWindow=None):
+        """
+        针对逐仓模式下的仓位，调整其逐仓保证金资金
+        """
+        params = {
+            'symbol': symbol,
+            'amount': amount,
+            'type': type,
+            'timestamp': self.timestamp
+        }
+        if positionSide:
+            params['positionSide'] = positionSide
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/positionMargin"
+        response = await self.client.post(url, json=params)
+        return response.json()
+
+    async def get_position_risk_v2(self, symbol=None, recvWindow=None):
+        """
+        查询持仓风险
+        """
+        params = {
+            'timestamp': self.timestamp
+        }
+        if symbol:
+            params['symbol'] = symbol
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v2/positionRisk"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_position_risk_v3(self, symbol=None, recvWindow=None):
+        """
+        查询持仓风险，仅返回有持仓或挂单的交易对
+        """
+        params = {
+            'timestamp': self.timestamp
+        }
+        if symbol:
+            params['symbol'] = symbol
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v3/positionRisk"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_adl_quantile(self, symbol=None, recvWindow=None):
+        """
+        持仓ADL队列估算
+        """
+        params = {
+            'timestamp': self.timestamp
+        }
+        if symbol:
+            params['symbol'] = symbol
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/adlQuantile"
+        response = await self.client.get(url, params=params)
+        return response.json()
+
+    async def get_isolated_margin_history(self, symbol, type=None, startTime=None, endTime=None, limit=500, recvWindow=None):
+        """
+        查询逐仓保证金变动历史
+        """
+        params = {
+            'symbol': symbol,
+            'timestamp': self.timestamp
+        }
+        if type:
+            params['type'] = type
+        if startTime:
+            params['startTime'] = startTime
+        if endTime:
+            params['endTime'] = endTime
+        if limit:
+            params['limit'] = limit
+        if recvWindow:
+            params['recvWindow'] = recvWindow
+
+        params = await self.get_signature(params)
+        url = f"{self.url}/fapi/v1/positionMargin/history"
+        response = await self.client.get(url, params=params)
+        return response.json()
