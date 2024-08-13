@@ -9,7 +9,7 @@
 api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
 secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
 """
-
+import asyncio
 import hashlib
 import hmac
 import time
@@ -17,19 +17,16 @@ import urllib.parse
 
 import httpx
 
-api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
-secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
-
 
 class TradeRestApi:
     def __init__(self, api_key, secret_key):
-        self.url = "https://fapi.binance.com"
+        # self.url = "https://fapi.binance.com"
+        self.url = "https://testnet.binancefuture.com"
         self.api_key = api_key
         self.secret_key = secret_key
         self.timestamp = int(time.time() * 1000)
         self.headers = {
             "Content-Type": "application/json;charset=utf-8",
-            "User-Agent": "binance-api",
             'X-MBX-APIKEY': self.api_key
         }
         self.client = httpx.AsyncClient(headers=self.headers)
@@ -45,7 +42,7 @@ class TradeRestApi:
         params['signature'] = signature
         return params
 
-    async def place_order(self, symbol, side, types, positionSide=None, reduceOnly=None, quantity=None, price=None,
+    async def place_order(self, symbol, side, types, positionSide="BOTH", reduceOnly=False, quantity=None, price=None,
                           newClientOrderId=None, stopPrice=None, closePosition=None, activationPrice=None,
                           callbackRate=None, timeInForce=None, workingType=None, priceProtect=None,
                           newOrderRespType=None, priceMatch=None, selfTradePreventionMode=None, goodTillDate=None,
@@ -95,8 +92,10 @@ class TradeRestApi:
             params['recvWindow'] = recvWindow
 
         params = await self.get_signature(params)
+        print(f"params: {params}")
         url = f"{self.url}/fapi/v1/order"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
+        print(f"{response.url}")
         return response.json()
 
     async def place_batch_order(self, batchOrders, recvWindow=1688):
@@ -112,7 +111,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/batchOrders"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def modify_order(self, symbol, side, quantity, price, orderId=None, origClientOrderId=None, priceMatch=None,
@@ -143,7 +142,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/order"
-        response = await self.client.put(url, json=params)
+        response = await self.client.put(url, params=params)
         return response.json()
 
     async def modify_batch_order(self, batchOrders, recvWindow=None):
@@ -159,7 +158,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/batchOrders"
-        response = await self.client.put(url, json=params)
+        response = await self.client.put(url, params=params)
         return response.json()
 
     async def get_order_amendment_history(self, symbol, orderId=None, origClientOrderId=None, startTime=None,
@@ -259,7 +258,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/countdownCancelAll"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def get_order_status(self, symbol, orderId=None, origClientOrderId=None, recvWindow=None):
@@ -391,6 +390,7 @@ class TradeRestApi:
         if recvWindow:
             params['recvWindow'] = recvWindow
 
+        print(f"params: {params}")
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/userTrades"
         response = await self.client.get(url, params=params)
@@ -410,7 +410,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/marginType"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def change_position_mode(self, dualSidePosition, recvWindow=None):
@@ -426,7 +426,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/positionSide/dual"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def change_leverage(self, symbol, leverage, recvWindow=None):
@@ -443,7 +443,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/leverage"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def change_multi_assets_margin(self, multiAssetsMargin, recvWindow=None):
@@ -459,7 +459,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/multiAssetsMargin"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def adjust_isolated_margin(self, symbol, amount, type, positionSide=None, recvWindow=None):
@@ -479,7 +479,7 @@ class TradeRestApi:
 
         params = await self.get_signature(params)
         url = f"{self.url}/fapi/v1/positionMargin"
-        response = await self.client.post(url, json=params)
+        response = await self.client.post(url, params=params)
         return response.json()
 
     async def get_position_risk_v2(self, symbol=None, recvWindow=None):
@@ -533,7 +533,8 @@ class TradeRestApi:
         response = await self.client.get(url, params=params)
         return response.json()
 
-    async def get_isolated_margin_history(self, symbol, type=None, startTime=None, endTime=None, limit=500, recvWindow=None):
+    async def get_isolated_margin_history(self, symbol, types=None, startTime=None, endTime=None, limit=500,
+                                          recvWindow=None):
         """
         查询逐仓保证金变动历史
         """
@@ -541,8 +542,8 @@ class TradeRestApi:
             'symbol': symbol,
             'timestamp': self.timestamp
         }
-        if type:
-            params['type'] = type
+        if types:
+            params['type'] = types
         if startTime:
             params['startTime'] = startTime
         if endTime:
@@ -556,3 +557,16 @@ class TradeRestApi:
         url = f"{self.url}/fapi/v1/positionMargin/history"
         response = await self.client.get(url, params=params)
         return response.json()
+
+
+if __name__ == "__main__":
+    api_key = "ab7e987dff902922908f4521b5046a9018d46a993dbfce334e5dfa84a21e1c38"
+    secret_key = "a01c3e6c0d49afdd52f59a902e2739aa8f57e999802e36a59303619d7ed7d69e"
+    # api_key = "4UITYCS7rLuEuyKnST3IRwz8FPNKfxuCkjnCcT0UylKmo40s2pVM0r8cQnKb8fXy"
+    # secret_key = "slQxspM6XYEAnGnhApekv2snw61XAMeXnmL9QQdQiGTVcjMoeOzyaazqCDdaMQNa"
+
+    # 测试网下单
+    trade = TradeRestApi(api_key, secret_key)
+    # 下单
+    print(asyncio.run(trade.place_order("ethusdt", "SELL", "LIMIT",
+                                        "BOTH", True, 0.01, 2600)))

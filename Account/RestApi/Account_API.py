@@ -12,19 +12,18 @@ import urllib.parse
 
 import httpx
 
-api_keys = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
-secret_keys = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
-
 
 class Account:
     """
     账户相关API
     """
+
     def __init__(self, api_key, secret_key):
         """
         初始化各参数
         """
-        self.base_url = "https://fapi.binance.com"
+        # self.base_url = "https://fapi.binance.com"
+        self.base_url = "https://testnet.binancefuture.com"
         self.api_key = api_key
         self.secret_key = secret_key
         self.timestamp = int(time.time() * 1000)
@@ -384,5 +383,9 @@ class Account:
 
 
 if __name__ == '__main__':
+    # api_keys = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
+    # secret_keys = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
+    api_keys = "ab7e987dff902922908f4521b5046a9018d46a993dbfce334e5dfa84a21e1c38"
+    secret_keys = "a01c3e6c0d49afdd52f59a902e2739aa8f57e999802e36a59303619d7ed7d69e"
     account = Account(api_keys, secret_keys)
-    print(asyncio.run(account.get_account_config()))
+    print(asyncio.run(account.get_order_rate_limit()))

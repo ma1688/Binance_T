@@ -291,4 +291,4 @@ if __name__ == "__main__":
     api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
     secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
     webs = MarketWebSocket(api_key, secret_key)
-    asyncio.run(webs.latestMarkPrice("btcusdt"))
+    asyncio.run(webs.aggTrade("1000satsusdt"))
