@@ -388,4 +388,7 @@ if __name__ == '__main__':
     api_keys = "ab7e987dff902922908f4521b5046a9018d46a993dbfce334e5dfa84a21e1c38"
     secret_keys = "a01c3e6c0d49afdd52f59a902e2739aa8f57e999802e36a59303619d7ed7d69e"
     account = Account(api_keys, secret_keys)
+
     print(asyncio.run(account.get_account_balance_v2()))
+
+
