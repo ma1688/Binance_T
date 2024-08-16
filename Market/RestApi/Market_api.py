@@ -17,8 +17,8 @@ import httpx
 class MarketRestApi:
 
     def __init__(self, api_keys, secret_keys):
-        # self.rest_base_url = "https://fapi.binance.com"
-        self.rest_base_url = "https://testnet.binancefuture.com"
+        self.rest_base_url = "https://fapi.binance.com"
+        # self.rest_base_url = "https://testnet.binancefuture.com"
         self.api_key = api_keys
         self.secret_key = secret_keys
         self.timestamp = int(time.time() * 1000)
@@ -113,7 +113,7 @@ class MarketRestApi:
                                                               "startTime": startTime,
                                                               "endTime": endTime,
                                                               "limit": limit})
-        return aggregate_trades_list
+        return aggregate_trades_list.json()
 
     # 获取K线数据
     async def get_candlestick_data(self, symbol, interval, startTime=None, endTime=None, limit=500):
@@ -482,4 +482,4 @@ if __name__ == "__main__":
     secret_key = "a01c3e6c0d49afdd52f59a902e2739aa8f57e999802e36a59303619d7ed7d69e"
 
     market = MarketRestApi(api_key, secret_key)
-    print(asyncio.run(market.get_aggregate_trades_list("BTCUSDT")))
+    print(asyncio.run(market.get_server_time()))

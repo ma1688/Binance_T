@@ -92,10 +92,8 @@ class TradeRestApi:
             params['recvWindow'] = recvWindow
 
         params = await self.get_signature(params)
-        print(f"params: {params}")
         url = f"{self.url}/fapi/v1/order"
         response = await self.client.post(url, params=params)
-        print(f"{response.url}")
         return response.json()
 
     async def place_batch_order(self, batchOrders, recvWindow=1688):
@@ -568,5 +566,4 @@ if __name__ == "__main__":
     # 测试网下单
     trade = TradeRestApi(api_key, secret_key)
     # 下单
-    print(asyncio.run(trade.place_order("ethusdt", "SELL", "LIMIT",
-                                        "BOTH", True, 0.01, 2600)))
+    print(asyncio.run(trade.get_all_orders("BTCUSDT")))

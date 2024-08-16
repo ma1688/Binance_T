@@ -9,10 +9,11 @@ import json
 
 import websockets
 
+from logger.logger import logger
+
 
 class MarketWebSocket:
     def __init__(self, api_keys, secret_keys):
-        # 初始化方法，设置基础URL、API密钥和WebSocket对象
         self.base_url = "wss://fstream.binance.com"
         self.api_key = api_keys
         self.secret_key = secret_keys
@@ -26,8 +27,7 @@ class MarketWebSocket:
 
     async def connect_multiple(self, stream_names):
         # 连接到多个WebSocket流
-        streams = "/".join(stream_names)
-        url = f"{self.base_url}/stream?streams={streams}"
+        url = f"{self.base_url}/stream?streams={stream_names}"
         self.ws = await websockets.connect(url)
         await self.handle_connection()
 
@@ -36,8 +36,9 @@ class MarketWebSocket:
         try:
             while True:
                 message = await self.ws.recv()
-                data = json.loads(message)
-                print(f"{data}")
+                message = json.loads(message)
+                logger.info(message)
+
         except websockets.ConnectionClosed:
             # 连接关闭时重新连接
             print("Connection closed, reconnecting...")
@@ -291,4 +292,4 @@ if __name__ == "__main__":
     api_key = "FXg92Z1e1IVC89WpVosBWT73RenGYaOsUR7PLuQ7YXv9cV6rpPbFWorT2WwaOk5H"
     secret_key = "vqrfNjxlKAcmdwpyo47qkUDkINpkL4AiyRQM9ytn9Plc8DgJWkiWg1IFX43fP6XX"
     webs = MarketWebSocket(api_key, secret_key)
-    asyncio.run(webs.aggTrade("1000satsusdt"))
+    asyncio.run(webs.subscribe_multiple("btcusdt@markPrice@1s/btcusdt_perpetual@continuousKline_1m"))
